@@ -42,6 +42,9 @@ $>make my_mouse
 ## Usage
 $>./my_mouse "name_of_correctly_formatted_maze_file.map"
 
+HINT: You will find 3 correctly formatted map examples in the assets folder, "assets/01.map" etc.
+
+
 ### The Core Team
 
 Rebecca Whipple Silverstein

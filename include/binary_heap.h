@@ -2,7 +2,6 @@
 #include "node_graph.h"
 
 /* structs */
-
 #ifndef _HEAP_
 #define _HEAP_
 typedef struct {
@@ -13,7 +12,6 @@ typedef struct {
 #endif
 
 /* function prototypes */
-
 heap_t* create_heap(int capacity);
 int parent(int i);
 int left_child(int i);

@@ -5,27 +5,27 @@
 #include "../include/helper.h"
 #include "../include/memory.h"
 
-
 bool a_star(legend_t** l, s_array_t** data)
 { 
-    // Create start + end nodes
-    node_t* end = create_special_node(*l, *data, (*l)->end);
+    // Create start and end nodes
+    node_t* end = create_type_node(*l, *data, (*l)->end); 
     (*l)->end_node = end;
-    node_t* start = create_special_node(*l, *data, (*l)->start);
+    node_t* start = create_type_node(*l, *data, (*l)->start);
     node_t* temp = NULL;
 
-    // Create open + closed lists, insert start node into open list
+    // Create open and closed lists
     int size = (*l)->num_rows * (*l)->num_cols;
-    // printf("Number of cells: %i\n", size);
     heap_t* open_list = create_heap(size);
     n_array_t* closed_list = create_node_array(size);
-    insert(open_list, start);
 
     // Run A* loop
+    insert(open_list, start);
     temp = a_loop(open_list, closed_list, l, data);
+    free(end);
 
     // Print map with reconstructed path
     trace_path(open_list, closed_list, *l, *data, temp);
+    free(temp);
 
     return EXIT_SUCCESS;
 }
@@ -38,32 +38,57 @@ node_t* a_loop(heap_t* open, n_array_t* closed, legend_t** l, s_array_t** data)
         node_t* current = extract_min(open); 
         add_neighbors(*l, *data, current);
 
-        for (int i = 0; i < 4; i++) {
-            if ((temp = is_end_node(*l, current->neighbors[i]))) { return temp; }
-            if (current->neighbors[i] == NULL) { continue; }
-            if ((temp = is_in_heap(open, current->neighbors[i])) && 
-                    current->neighbors[i]->f >= temp->f) { 
-                free(current->neighbors[i]);
-                continue; 
-            }
-            if ((temp = is_in_closed_list(closed->array, current->neighbors[i])) && 
-                    current->neighbors[i]->f >= temp->f) { 
-                free(current->neighbors[i]);
-                continue; 
-            }
-            insert(open, current->neighbors[i]);
-        }
+        if ((temp = n_loop(open, closed, l, current))) { return temp; } 
 
         add_node_to_array(closed, current);
     }
+
     return NULL;
 }
 
+node_t* n_loop(heap_t* open, n_array_t* closed, legend_t** l, node_t* node)
+{
+    node_t* temp = NULL;
 
+    // Cycle through neighbors, remove node if better path exists or add to open list
+    for (int i = 0; i < 4; i++) {
+        if (node->neighbors[i] == NULL) { continue; }
+        if ((temp = is_end_node(*l, node->neighbors[i]))) { 
+            // Handle memory when end node is reached
+            end_found(closed, node, i);
+            return temp; 
+        }
+        if ((temp = is_in_heap(open, node->neighbors[i])) && 
+                node->neighbors[i]->f >= temp->f) { 
+            free(node->neighbors[i]);
+            continue; 
+        }
+        if ((temp = is_in_array(closed->array, node->neighbors[i])) && 
+                node->neighbors[i]->f >= temp->f) { 
+            free(node->neighbors[i]);
+            continue; 
+        }
+        insert(open, node->neighbors[i]);
+    }
+
+    return NULL;
+}
+
+void end_found(n_array_t* closed_list, node_t* node, int index) 
+{
+    int i = index + 1;
+    
+    while (i < 4) {
+        free(node->neighbors[i]);
+        i++;
+    }
+    
+    add_node_to_array(closed_list, node);
+}
 
 void trace_path(heap_t* o, n_array_t* c,legend_t* l, s_array_t* d, node_t* p) 
 {
-    // Create path from end back to start
+    // Create path from end to start
     int steps = 0;
     node_t* current = p->successor;
     while (current->successor != NULL) {
@@ -80,7 +105,6 @@ void trace_path(heap_t* o, n_array_t* c,legend_t* l, s_array_t* d, node_t* p)
     free_heap(o);
     free_node_array(c);
     free_string_array(d);
-    free(p);
     free(l);
 }
 
@@ -88,8 +112,7 @@ void print_map(legend_t* legend, s_array_t* data)
 {
     int i;
 
-    for (i = 0; i < legend->num_rows; i++) {
+    for (i = 0; i <= legend->num_rows; i++) {
         printf("%s\n", data->array[i]);
     }
-    printf("%s", data->array[i]);
 }

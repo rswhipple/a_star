@@ -1,5 +1,5 @@
 #include "../include/cli.h"
-#include "../include/readline.h"
+#include "../include/read_line.h"
 #include "../include/helper.h"
 #include "../include/error_handler.h"
 #include "../include/memory.h"
@@ -24,7 +24,7 @@ s_array_t* parse_user_input(int argc, char** argv, legend_t** legend)
 
 legend_t* parse_first_line(int fd, read_line_t **buf, char** first_line) 
 {
-    if (!(*first_line = my_readline(fd, buf))) {
+    if (!(*first_line = my_read_line(fd, buf))) {
         map_error();
         return NULL;
     }
@@ -50,7 +50,7 @@ s_array_t* read_map(int fd, int num_rows, read_line_t **buf, char* first_line)
     data->array[0] = first_line;
     data->size += 1;
     
-    while ((str = my_readline(fd, buf)) != NULL)
+    while ((str = my_read_line(fd, buf)) != NULL)
     {
         if (str[0] == '\0' || str[0] == '\n') {
             free(str);

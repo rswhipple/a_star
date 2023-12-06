@@ -1,17 +1,17 @@
-#include "../include/readline.h"
+#include "../include/read_line.h"
 #include "../include/helper.h"
 
-char *my_readline(int fd, read_line_t **buf)  
+char *my_read_line(int fd, read_line_t **buf) 
 {
     int total_bytes = 0;
     int bytes = 1;
     if (*buf != NULL) {
         if (!(handle_leftover(buf, &total_bytes))) { return (*buf)->storage; }
     } else { 
-        if (!init_readline(buf)) { return NULL; } 
+        if (!init_read_line(buf)) { return NULL; } 
     }
 
-    switch (readline_loop(buf, fd, &bytes, &total_bytes)) {
+    switch (read_line_loop(buf, fd, &bytes, &total_bytes)) {
         case 0:
             return NULL;
         case 1:
@@ -21,10 +21,10 @@ char *my_readline(int fd, read_line_t **buf)
     }
 
     if (bytes == 0 && total_bytes == 0) {
-        flush_readline(buf);
+        flush_read_line(buf);
         return NULL;
     }
-    
+
     (*buf)->leftover = NULL;
     return (*buf)->storage;
 }
@@ -54,7 +54,7 @@ bool handle_leftover(read_line_t** buf, int* total_bytes)
     return true;
 }
 
-int readline_loop(read_line_t** buf, int fd, int* bytes, int* total_bytes) 
+int read_line_loop(read_line_t** buf, int fd, int* bytes, int* total_bytes) 
 {
     while (*bytes > 0) {
         *bytes = read(fd, (*buf)->storage + *total_bytes, READLINE_READ_SIZE);
@@ -64,7 +64,11 @@ int readline_loop(read_line_t** buf, int fd, int* bytes, int* total_bytes)
         if (*bytes == 0) { return 1; }
 
         (*buf)->storage[*total_bytes] = '\0';
+        if ((*buf)->storage[*total_bytes - 1] == '\n') {
+            (*buf)->storage[*total_bytes - 1] = '\0';
+        }
 
+        // Check for echo edge case
         int echo_toggle = is_echo((*buf)->storage, *bytes);
         if (echo_toggle) {
             if ((*buf)->storage[*total_bytes - 1] == '\n') {
@@ -72,10 +76,11 @@ int readline_loop(read_line_t** buf, int fd, int* bytes, int* total_bytes)
             }
             convert_newline_char((*buf)->storage, *bytes);
         }
-
+        // Copy first line only into buf->storage + return
         copy_first_line(buf, (*buf)->storage, *total_bytes);
         return 2;
     }
+
     return 1;
 }
 
@@ -91,16 +96,19 @@ void copy_first_line(read_line_t** buf, char* src, int src_len)
         return;
     }
 
+    // Store next line in temp_buf_1, leftover in temp_buf_2
     char *temp_buf_1 = init_string(index + 1);
     char *temp_buf_2 = init_string(src_len - index + 1);
     my_strncpy(temp_buf_1, src, index);
     my_strcpy(temp_buf_2, src + index);
     free(src);
 
+    // Copy temp buffers into readline_t
     (*buf)->storage = malloc(sizeof(char) * my_strlen(temp_buf_1) + 1);
     my_strcpy((*buf)->storage, temp_buf_1);
     (*buf)->leftover = malloc(sizeof(char) * my_strlen(temp_buf_2) + 1);
     my_strcpy((*buf)->leftover, temp_buf_2);
+
     free(temp_buf_1);
     free(temp_buf_2);
 }
@@ -143,14 +151,15 @@ int find_newline(char* string)
     return index;
 }
 
-void flush_readline(read_line_t **buf)
+// Flush buffer
+void flush_read_line(read_line_t **buf)
 {
     free((*buf)->storage);
     free(*buf);
     *buf = NULL;
 }
 
-bool init_readline(read_line_t** buf) 
+bool init_read_line(read_line_t** buf) 
 {
     *buf = (read_line_t*)malloc(sizeof(read_line_t) + 1);
     (*buf)->storage = (char*)malloc(sizeof(char) * (READLINE_READ_SIZE + 1));
@@ -165,7 +174,8 @@ bool init_readline(read_line_t** buf)
 char* init_string(int len) 
 {
     char* string = (char*)malloc(sizeof(char) * (len + 1));
-    memset(string, 0, len + 1);
+    memset(string, 0, len + 1); // use init_string instead?
 
     return string;
 }
+

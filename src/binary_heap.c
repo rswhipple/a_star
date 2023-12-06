@@ -2,7 +2,6 @@
 #include "../include/helper.h"
 #include "../include/node_graph.h"
 
-
 heap_t* create_heap(int capacity)
 {
     heap_t* heap = (heap_t*)malloc(sizeof(heap_t));
