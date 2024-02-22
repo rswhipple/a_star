@@ -37,10 +37,16 @@ To improve performance I implement a binary heap for the open list, and a node a
 ## Installation
 All header files are in the "include" folder, c files are in the "src" folder.
 To compile the program:
-$>make my_mouse
+
+```
+$> make my_mouse
+```
 
 ## Usage
-$>./my_mouse "name_of_correctly_formatted_maze_file.map"
+
+```
+$> ./my_mouse "name_of_correctly_formatted_maze_file.map"
+```
 
 HINT: You will find 3 correctly formatted map examples in the assets folder, "assets/01.map" etc.
 
