@@ -3,6 +3,7 @@
 #include "../include/helper.h"
 #include "../include/error_handler.h"
 #include "../include/memory.h"
+
 s_array_t* parse_user_input(int argc, char** argv, legend_t** legend)
 {
     int fd;
